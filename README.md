@@ -29,7 +29,7 @@ $ make clean
 
 ### TODO
 
-    - Empty list for a while
+    - Test efficiency of the selection kernel.
 
 ***
 

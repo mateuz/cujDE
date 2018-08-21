@@ -8,7 +8,7 @@ OBJS  = $(patsubst %.cpp, $(OBJ_PATH)/%.o, $(notdir $(SRCS)))
 OBJS += $(patsubst %.cu, $(OBJ_PATH)/%.cu.o, $(notdir $(CUDA_SRCS)))
 
 CC = g++ -std=c++11 -O3
-C-CUDA = nvcc -arch=sm_61 -std=c++11 -O3 -use_fast_math
+C-CUDA = nvcc -arch=sm_61 -std=c++11 -O3 -rdc=true -use_fast_math
 
 BOOST_FLAG = -lboost_program_options
 

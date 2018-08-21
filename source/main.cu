@@ -17,8 +17,9 @@
 #include <assert.h>
 
 #include <boost/program_options.hpp>
-
 namespace po = boost::program_options;
+
+#include "jDE.cuh"
 
 void show_params(
 	uint n_runs,
@@ -92,5 +93,8 @@ int main(int argc, char * argv[]){
 	printf(" | \t mean:         %+.3lf\n", T_mean);
 	printf(" | \t std:          %+.3lf\n", T_std);
 	printf(" +==============================================================+ \n");
+
+	jDE * jde = new jDE(20, 10);
+	jde->run();
 	return 0;
 }
