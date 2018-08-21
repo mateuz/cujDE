@@ -5,8 +5,9 @@
 ***
 #### Requirements
 
-(CUDA Toolkit)[https://developer.nvidia.com/cuda-toolkit] (tested with 9.2)
-(Boost C++ Libraries -- Program Options)[https://www.boost.org/] (tested with 1.58.0)
+- (CUDA Toolkit)[https://developer.nvidia.com/cuda-toolkit] (tested with 9.2)
+
+- (Boost C++ Libraries -- Program Options)[https://www.boost.org/] (tested with 1.58.0)
 
 ##### Compile
 
