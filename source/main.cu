@@ -24,6 +24,8 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
+#include "Benchmarks.cuh"
+#include "F1.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -113,53 +115,78 @@ int main(int argc, char * argv[]){
 	float * p_fog = thrust::raw_pointer_cast(d_fog.data());
 	float * p_fng = thrust::raw_pointer_cast(d_fng.data());
 
-	float x_min = -10.0;
-	float x_max = +10.0;
+	thrust::device_vector<float>::iterator it;
+
+	Benchmarks * B = new F1(n_dim, NP);
+	float x_min = B->getMin();
+	float x_max = B->getMax();
+
 	float time  = 0.00;
 
+	std::vector< std::pair<float, float> > stats;
 	for( int i = 1; i <= n_runs; i++ ){
-		/* Randomly initiate the population */
+		jDE * jde = new jDE(NP, n_dim, x_min, x_max);
+		// Randomly initiate the population
 		thrust::counting_iterator<uint> isb(0);
 		thrust::transform(isb, isb + (n_dim * NP), d_og.begin(), prg(x_min, x_max));
-		jDE * jde = new jDE(NP, n_dim, x_min, x_max);
-
+		/* Starts a Run */
+		B->compute(p_og, p_fog);
 		cudaEventRecord(start);
 		for( uint evals = 0; evals < n_evals; evals += NP ){
 			jde->index_gen();
 			jde->run(p_og, p_ng);
+			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
 			jde->update();
-		}
+	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 		cudaEventElapsedTime(&time, start, stop);
-		printf(" | Execution: %-2d Overall Best: %+.10E Time(ms): %.5f\n", i, 0.00, time);
+		/* End a Run */
+		it = thrust::min_element(thrust::device, d_fog.begin(), d_fog.end());
+		printf(" | Execution: %-2d Overall Best: %+.8lf Time(ms): %.8f\n", i, static_cast<float>(*it), time);
+		stats.push_back(std::make_pair(static_cast<float>(*it), time));
 	}
-
+	/* Statistics of the Runs */
 	double FO_mean  = 0.0f, FO_std  = 0.0f;
 	double T_mean   = 0.0f, T_std   = 0.0f;
+	for( auto it = stats.begin(); it != stats.end(); it++){
+		FO_mean += it->first;
+		T_mean  += it->second;
+	}
+	FO_mean /= n_runs;
+	T_mean  /= n_runs;
+	for( auto it = stats.begin(); it != stats.end(); it++){
+		FO_std += (( it->first - FO_mean )*( it->first  - FO_mean ));
+		T_std  += (( it->second - T_mean )*( it->second - T_mean  ));
+	}
+	FO_std /= n_runs;
+	FO_std = sqrt(FO_std);
+	T_std /= n_runs;
+	T_std = sqrt(T_std);
 	printf(" +==============================================================+ \n");
 	printf(" |                     EXPERIMENTS RESULTS                      | \n");
 	printf(" +==============================================================+ \n");
 	printf(" | Objective Function:\n");
-	printf(" | \t mean:         %+.20E\n", FO_mean);
-	printf(" | \t std:          %+.20E\n", FO_std);
-	printf(" | Execution Time: \n");
+	printf(" | \t mean:         %+.10E\n", FO_mean);
+	printf(" | \t std:          %+.10E\n", FO_std);
+	printf(" | Execution Time (ms): \n");
 	printf(" | \t mean:         %+.3lf\n", T_mean);
 	printf(" | \t std:          %+.3lf\n", T_std);
 	printf(" +==============================================================+ \n");
 
 	/*
 	printf("================\n");
+	h_fog = d_fog;
+	for( int i = 0; i < NP; i++ )
+		printf("%.3f ", h_fog[i]);
+	printf("\n");
+	printf("================\n");
 	h_og = d_og;
 	for( int i = 0; i < NP*n_dim; i++ )
 		printf("%.3f ", h_og[i]);
 	printf("\n");
 	printf("================\n");
-	h_ng = d_ng;
-	for( int i = 0; i < NP*n_dim; i++ )
-		printf("%.3f ", h_ng[i]);
-	printf("\n");
-	printf("================\n");*/
+	*/
 	return 0;
 }
