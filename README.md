@@ -5,9 +5,9 @@
 ***
 #### Requirements
 
-- (CUDA Toolkit)[https://developer.nvidia.com/cuda-toolkit] (tested with 9.2)
+- [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (tested with 9.2)
 
-- (Boost C++ Libraries -- Program Options)[https://www.boost.org/] (tested with 1.58.0)
+- [Boost C++ Libraries - Program Options](https://www.boost.org/) (tested with 1.58.0)
 
 ##### Compile
 
@@ -15,11 +15,23 @@
 $ cd repo
 $ make
 ```
+
+#### Parameters Setting
+
+```
+$ "runs, r"      - Number of Executions
+$ "pop_size, p"  - Population Size
+$ "dim, d"       - Number of Dimensions
+$ "func_obj, o"  - Function to Optimize [1,4]
+$ "max_eval, e"  - Number of Function Evaluations
+$ "help, h"      - Show this help
+```
+
 ##### Execute
 
 ```sh
 $ cd repo
-$ ./demo or make run
+$ ./demo <parameter setting> or make run (with default parameters)
 ```
 
 #### Clean up
