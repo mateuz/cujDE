@@ -26,23 +26,18 @@ void show_params(
 	uint NP,
 	uint n_evals,
 	uint n_dim,
-	float F,
-	float CR,
 	std::string FuncObj
 ){
 	printf(" | Number of Executions:                    %d\n", n_runs);
 	printf(" | Population Size:                         %d\n", NP);
 	printf(" | Number of Dimensions:                    %d\n", n_dim);
 	printf(" | Number of Function Evaluations:          %d\n", n_evals);
-	printf(" | Mutation Factor:                         %.2f\n", F);
-	printf(" | Crossover Probability:                   %.2f\n", CR);
 	printf(" | Optimization Function:                   %s\n", FuncObj.c_str());
 }
 
 int main(int argc, char * argv[]){
 	srand(time(NULL));
 	uint n_runs, NP, n_evals, n_dim, f_id;
-	float F, CR;
 	std::string FuncObj;
 
 	try{
@@ -53,8 +48,6 @@ int main(int argc, char * argv[]){
 			("dim,d"     , po::value<uint>(&n_dim)->default_value(10)    , "Number of Dimensions"          )
 			("func_obj,o", po::value<uint>(&f_id)->default_value(1)      , "Function to Optimize"          )
 			("max_eval,e", po::value<uint>(&n_evals)->default_value(10e5), "Number of Function Evaluations")
-			("mf,f"      , po::value<float>(&F)->default_value(0.5)      , "Mutation Factor [0, 2]"        )
-			("cr,c"      , po::value<float>(&CR)->default_value(0.9)     , "Crossover Probability [0, 1]"  )
 			("help,h", "Mostrar texto de Ajuda");
 
 		po::options_description cmdline_options;
@@ -74,7 +67,7 @@ int main(int argc, char * argv[]){
 	printf(" +==============================================================+ \n");
 	printf(" |                      EXECUTION PARAMETERS                    | \n");
 	printf(" +==============================================================+ \n");
-	show_params(n_runs, NP, n_evals, n_dim, F, CR, FuncObj);
+	show_params(n_runs, NP, n_evals, n_dim, FuncObj);
 	printf(" +==============================================================+ \n");
 
 	for( int i = 1; i <= n_runs; i++ ){
