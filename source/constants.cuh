@@ -1,6 +1,20 @@
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
 
+/*
+ * | ---------------------------
+ * | Data Type | size (byte)   |
+ * | ---------------------------
+ * | short     |      2        |
+ * | int       |      4        |
+ * | uint      |      4        |
+ * | float     |      4        |
+ * | double    |      8        |
+ * | ---------------------------
+ * | Total     |  4028 / 65536 |
+ * | ---------------------------
+ */
+
 typedef struct {
     float x_min;
     float x_max;

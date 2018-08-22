@@ -8,7 +8,6 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
 {
   checkCudaErrors(cudaMalloc((void **)&F,  NP * sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&CR, NP * sizeof(float)));
-
   thrust::fill(thrust::device, F , F  + NP, 0.50);
   thrust::fill(thrust::device, CR, CR + NP, 0.90);
 
@@ -17,18 +16,21 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   conf.x_max = x_max;
   conf.ps = NP;
   conf.n_dim = n_dim;
-  checkCudaErrors(cudaMemcpyToSymbol(params, &conf, sizeof(Configuration)));
 
+  checkCudaErrors(cudaMemcpyToSymbol(params, &conf, sizeof(Configuration)));
   checkCudaErrors(cudaMalloc((void **)&rseq, NP * sizeof(uint)));
   checkCudaErrors(cudaMalloc((void **)&fseq, 3 * NP * sizeof(uint)));
-
+  checkCudaErrors(cudaMalloc((void **)&d_states, NP * sizeof(curandStateXORWOW_t)));
   thrust::sequence(thrust::device, rseq, rseq + NP);
 
-  checkCudaErrors(cudaMalloc((void **)&d_states, NP * sizeof(curandStateXORWOW_t)));
+  n_threads = 32;
+  n_blocks = iDivUp(NP, n_threads);
+
+  //printf("nThreads(): %u nBlocks(): %u\n", nt, nb);
 
   std::random_device rd;
   unsigned int seed = rd();
-  setup_kernel<<<2, 10>>>(d_states, seed);
+  setup_kernel<<<n_blocks, n_threads>>>(d_states, seed);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -40,21 +42,33 @@ jDE::~jDE()
   checkCudaErrors(cudaFree(fseq));
 }
 
+uint jDE::iDivUp(uint a, uint b)
+{
+  return (a%b)? (a/b)+1 : a/b;
+}
+
 void jDE::update(){
-  updateK<<<1, 20>>>(d_states, F, CR);
+  updateK<<<n_blocks, n_threads>>>(d_states, F, CR);
   checkCudaErrors(cudaGetLastError());
 }
 
-void jDE::run(){
-  DE<<<1, 20>>>(d_states, NULL, NULL, F, CR, fseq);
+/*
+ * fog == fitness of the old offspring
+ * fng == fitness of the new offspring
+ */
+void jDE::run(float * og, float * ng){
+  DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
   checkCudaErrors(cudaGetLastError());
-  cudaDeviceSynchronize();
 }
 
 void jDE::index_gen(){
-  iGen<<<2,10>>>(d_states, rseq, fseq);
+  iGen<<<n_blocks, n_threads>>>(d_states, rseq, fseq);
   checkCudaErrors(cudaGetLastError());
-  cudaDeviceSynchronize();
+}
+
+void jDE::selection(float * og, float * ng, float * fog, float * fng){
+  selectionK<<<n_blocks, n_threads>>>(og, ng, fog, fng);
+  checkCudaErrors(cudaGetLastError());
 }
 
 /*
@@ -66,23 +80,27 @@ void jDE::index_gen(){
 __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
 	int index = threadIdx.x + blockDim.x * blockIdx.x;
 
-	curandState localState;
-	localState = g_state[index];
+  uint ps = params.ps;
 
-	//(0, 1]
-	double r1, r2, r3, r4;
-	r1 = curand_uniform(&localState);
-	r2 = curand_uniform(&localState);
-	r3 = curand_uniform(&localState);
-	r4 = curand_uniform(&localState);
+  if( index < ps ){
+  	curandState localState;
+  	localState = g_state[index];
 
-	if (r2 < T)
-		d_F[index] = F_Lower + (r1 * F_Upper);
+  	//(0, 1]
+  	double r1, r2, r3, r4;
+  	r1 = curand_uniform(&localState);
+  	r2 = curand_uniform(&localState);
+  	r3 = curand_uniform(&localState);
+  	r4 = curand_uniform(&localState);
 
-	if (r4 < T)
-		d_CR[index] = r3;
+  	if (r2 < T)
+  		d_F[index] = F_Lower + (r1 * F_Upper);
 
-	g_state[index] = localState;
+  	if (r4 < T)
+  		d_CR[index] = r3;
+
+  	g_state[index] = localState;
+  }
 }
 
 /*
@@ -96,54 +114,62 @@ __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
  */
 __global__ void selectionK(float * og, float * ng, float * fog, float * fng){
   uint index = threadIdx.x + blockDim.x * blockIdx.x;
-  if( fng[index] <= fog[index] ){
-    uint ndim = params.n_dim;
-    memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
-    fog[index] = fng[index];
- }
+  uint ps = params.ps;
+
+  if( index < ps ){
+    if( fng[index] <= fog[index] ){
+      uint ndim = params.n_dim;
+      memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
+      fog[index] = fng[index];
+   }
+  }
 }
 
 /*
  * Performs the DE/rand/1/bin operation
+ * 1 thread == 1 individual
  * rng == global random state
  * fog == fitness of the old offspring
  * fng == fitness of the new offspring
  * F == mutation factor vector
  * CR == crossover probability vector
  */
-__global__ void DE(curandState * rng, float * fog, float * fng, float * F, float * CR, uint * fseq){
-  uint index = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void DE(curandState * rng, float * og, float * ng, float * F, float * CR, uint * fseq){
+  uint i, index, ps, n_dim;
+  index = threadIdx.x + blockDim.x * blockIdx.x;
+  ps = params.ps;
 
-  if(index == 0){
-    printf("%d => ndim(%d) ps(%d)\nx_min: %+.2f x_max: %+.2f\nF_Lower: %.2f F_Upper: %.2f T: %.2f\n",
-      index, params.n_dim, params.ps,
-      params.x_min, params.x_max,
-      F_Lower, F_Upper, T
-    );
-  }
+  if(index < ps){
+    uint n1, n2, n3, p1, p2, p3, p4;
+    n_dim = params.n_dim;
 
-  uint ps = params.ps;
-  uint n_dim = params.n_dim;
+    n1 = fseq[index];
+    n2 = fseq[index + ps];
+    n3 = fseq[index + ps + ps];
 
-  uint n1, n2, n3, i;
-  n1 = fseq[index];
-  n2 = fseq[index + ps];
-  n3 = fseq[index + ps + ps];
+    float mF  = F[index];
+    float mCR = CR[index];
 
-  float mF  = F[index];
-  float mCR = CR[index];
+    curandState random = rng[index];
 
-  printf("[%-2d] %-2d | %-2d | %-2d F: %.2f CR: %.2f\n", index, n1, n2, n3, mF, mCR);
-  curandState random = rng[index];
+    p1 = index * n_dim;
+    p2 = n3 * n_dim;
+    p3 = n2 * n_dim;
+    p4 = n1 * n_dim;
+    //printf("[%u] %u %u %u => %u %u %u %u\n", index, n1, n2, n3, p4, p3, p2, p1);
+    for( i = 0; i < n_dim; i++ ){
+      if( curand_uniform(&random) <= mCR || (i == n_dim - 1) ){
+        ng[p1 + i] = og[p2 + i] + mF * (og[p3 + i] - og[p4 + i]);
 
-  for( i = 0; i < n_dim; i++ ){
-    if( curand_uniform(&random) <= mCR || (i == n_dim - 1) ){
-      /* empty for a while */
-    } else {
-      /* empty for a while */
+        /* Check bounds */
+        ng[p1 + i] = max(params.x_min, ng[p1 + i]);
+        ng[p1 + i] = min(params.x_max, ng[p1 + i]);
+      } else {
+        ng[p1 + i] = og[p1 + i];
+      }
     }
+    rng[index] = random;
   }
-  rng[index] = random;
 }
 
 /*
@@ -154,35 +180,36 @@ __global__ void DE(curandState * rng, float * fog, float * fng, float * F, float
 __global__ void iGen(curandState * g_state, uint * rseq, uint * fseq){
   uint index = threadIdx.x + blockDim.x * blockIdx.x;
 
-  curandState s = g_state[index];
+  uint ps = params.ps;
+  if( index < ps ){
+    curandState s = g_state[index];
 
-  uint n1, n2, n3, ps = params.ps;
+    uint n1, n2, n3;
 
-  n1 = curand(&s) % ps;
-  if( rseq[n1] == index )
-    n1 = (n1 + 1) % ps;
+    n1 = curand(&s) % ps;
+    if( rseq[n1] == index )
+      n1 = (n1 + 1) % ps;
 
-  n2 = ( curand(&s) % ((int)ps/3) ) + 1;
-  if( rseq[(n1 + n2) % ps] == index )
-    n2 = (n2 + 1) % ps;
+    n2 = ( curand(&s) % ((int)ps/3) ) + 1;
+    if( rseq[(n1 + n2) % ps] == index )
+      n2 = (n2 + 1) % ps;
 
-  n3 = ( curand(&s) % ((int)ps/3) ) + 1;
-  if( rseq[(n1 + n2 + n3) % ps] == index )
-    n3 = (n3 + 1 ) % ps;
+    n3 = ( curand(&s) % ((int)ps/3) ) + 1;
+    if( rseq[(n1 + n2 + n3) % ps] == index )
+      n3 = (n3 + 1 ) % ps;
 
-  fseq[index] = rseq[n1];
-  fseq[index+ps] = rseq[(n1+n2)%ps];
-  fseq[index+ps+ps] = rseq[(n1+n2+n3)%ps];
+    fseq[index] = rseq[n1];
+    fseq[index+ps] = rseq[(n1+n2)%ps];
+    fseq[index+ps+ps] = rseq[(n1+n2+n3)%ps];
 
-  g_state[index] = s;
-
-  printf("[%-2d] %-2d | %-2d | %-2d\n", index, rseq[n1], rseq[(n1+n2)%ps], rseq[(n1+n2+n3)%ps]);
+    g_state[index] = s;
+    //printf("[%-3d] %-3d | %-3d | %-3d\n", index, rseq[n1], rseq[(n1+n2)%ps], rseq[(n1+n2+n3)%ps]);
+  }
 }
 
 /* Each thread gets same seed, a different sequence number, no offset */
 __global__ void setup_kernel(curandState * random, uint seed){
 	uint index = threadIdx.x + (blockIdx.x * blockDim.x);
-
 	if (index < params.ps)
 		curand_init(seed, index, 0, &random[index]);
 }

@@ -15,11 +15,32 @@
 #include <time.h>
 #include <math.h>
 #include <assert.h>
+#include <thrust/random.h>
+#include <thrust/transform.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/iterator/counting_iterator.h>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
 #include "jDE.cuh"
+
+struct prg
+{
+  float a, b;
+
+  __host__ __device__ prg(float _a=0.f, float _b=1.f) : a(_a), b(_b) {};
+
+  __host__ __device__ float operator()(const unsigned int n) const
+  {
+    thrust::default_random_engine rng;
+    thrust::uniform_real_distribution<float> dist(a, b);
+    rng.discard(n);
+
+    return dist(rng);
+  }
+};
 
 void show_params(
 	uint n_runs,
@@ -33,6 +54,9 @@ void show_params(
 	printf(" | Number of Dimensions:                    %d\n", n_dim);
 	printf(" | Number of Function Evaluations:          %d\n", n_evals);
 	printf(" | Optimization Function:                   %s\n", FuncObj.c_str());
+	printf(" +==============================================================+ \n");
+	printf(" | Number of Threads                        %d\n", 32);
+	printf(" | Number of Blocks                         %d\n", (NP%32)? (NP/32)+1 : NP/32);
 }
 
 int main(int argc, char * argv[]){
@@ -43,7 +67,7 @@ int main(int argc, char * argv[]){
 	try{
 		po::options_description config("Opções");
 		config.add_options()
-			("runs,r"    , po::value<uint>(&n_runs)->default_value(5)    , "Number of Executions"          )
+			("runs,r"    , po::value<uint>(&n_runs)->default_value(1)    , "Number of Executions"          )
 			("pop_size,p", po::value<uint>(&NP)->default_value(20)       , "Population Size"               )
 			("dim,d"     , po::value<uint>(&n_dim)->default_value(10)    , "Number of Dimensions"          )
 			("func_obj,o", po::value<uint>(&f_id)->default_value(1)      , "Function to Optimize"          )
@@ -70,9 +94,46 @@ int main(int argc, char * argv[]){
 	show_params(n_runs, NP, n_evals, n_dim, FuncObj);
 	printf(" +==============================================================+ \n");
 
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	thrust::device_vector<float> d_og(n_dim * NP);
+	thrust::device_vector<float> d_ng(n_dim * NP);
+	thrust::device_vector<float> d_fog(NP, 0.0);
+	thrust::device_vector<float> d_fng(NP, 0.0);
+
+	thrust::host_vector<float> h_og(n_dim * NP);
+	thrust::host_vector<float> h_ng(n_dim * NP);
+	thrust::host_vector<float> h_fog(NP);
+	thrust::host_vector<float> h_fng(NP);
+
+	float * p_og  = thrust::raw_pointer_cast(d_og.data());
+	float * p_ng  = thrust::raw_pointer_cast(d_ng.data());
+	float * p_fog = thrust::raw_pointer_cast(d_fog.data());
+	float * p_fng = thrust::raw_pointer_cast(d_fng.data());
+
+	float x_min = -10.0;
+	float x_max = +10.0;
+	float time  = 0.00;
+
 	for( int i = 1; i <= n_runs; i++ ){
-		printf(" | Execution: %-2d Overall Best: %+.10E Time (s): %.3lf\n",
-		 i, 0.00, 0.00);
+		/* Randomly initiate the population */
+		thrust::counting_iterator<uint> isb(0);
+		thrust::transform(isb, isb + (n_dim * NP), d_og.begin(), prg(x_min, x_max));
+		jDE * jde = new jDE(NP, n_dim, x_min, x_max);
+
+		cudaEventRecord(start);
+		for( uint evals = 0; evals < n_evals; evals += NP ){
+			jde->index_gen();
+			jde->run(p_og, p_ng);
+			jde->selection(p_og, p_ng, p_fog, p_fng);
+			jde->update();
+		}
+		cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&time, start, stop);
+		printf(" | Execution: %-2d Overall Best: %+.10E Time(ms): %.5f\n", i, 0.00, time);
 	}
 
 	double FO_mean  = 0.0f, FO_std  = 0.0f;
@@ -88,10 +149,17 @@ int main(int argc, char * argv[]){
 	printf(" | \t std:          %+.3lf\n", T_std);
 	printf(" +==============================================================+ \n");
 
-	jDE * jde = new jDE(20, 10, -0.523, +3.231);
-	jde->update();
-	jde->index_gen();
-	jde->run();
-
+	/*
+	printf("================\n");
+	h_og = d_og;
+	for( int i = 0; i < NP*n_dim; i++ )
+		printf("%.3f ", h_og[i]);
+	printf("\n");
+	printf("================\n");
+	h_ng = d_ng;
+	for( int i = 0; i < NP*n_dim; i++ )
+		printf("%.3f ", h_ng[i]);
+	printf("\n");
+	printf("================\n");*/
 	return 0;
 }

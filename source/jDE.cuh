@@ -19,6 +19,8 @@ class jDE {
 protected:
   uint NP;
   uint n_dim;
+  uint n_threads;
+  uint n_blocks;
 
   float x_min;
   float x_max;
@@ -34,15 +36,16 @@ public:
   jDE( uint, uint, float, float );
   ~jDE();
 
-  void run();
+  uint iDivUp(uint a, uint b);
+  void run(float *, float *);
   void update();
-  void selection();
+  void selection(float *, float *, float *, float *);
   void index_gen();
 };
 
 __global__ void updateK(curandState *, float *, float *);
 
-__global__ void selectionK(float *, float *, float *, float *, uint);
+__global__ void selectionK(float *, float *, float *, float *);
 
 __global__ void DE(curandState *, float *, float *, float *, float *, uint *);
 
