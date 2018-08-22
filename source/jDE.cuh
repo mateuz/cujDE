@@ -16,13 +16,17 @@
 #include <random>
 
 class jDE {
-private:
+protected:
   uint NP;
   uint n_dim;
 
   float x_min;
   float x_max;
 
+  /* device data */
+  curandState * d_states;
+  uint * rseq;
+  uint * fseq;
   float * F;
   float * CR;
 
@@ -44,6 +48,6 @@ __global__ void DE(curandState *, float *, float *, float *, float *, uint *);
 
 __global__ void iGen(curandState *, uint *, uint *);
 
-__global__ void setup_kernel(curandState *);
+__global__ void setup_kernel(curandState *, uint);
 
 #endif

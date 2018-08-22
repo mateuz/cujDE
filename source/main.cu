@@ -96,7 +96,9 @@ int main(int argc, char * argv[]){
 	printf(" +==============================================================+ \n");
 
 	jDE * jde = new jDE(20, 10, -0.523, +3.231);
-	jde->run();
+	jde->update();
 	jde->index_gen();
+	jde->run();
+
 	return 0;
 }
