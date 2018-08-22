@@ -3,7 +3,7 @@
 ###### A CUDA-Based implementation of a self-adaptive differential evolution namely jDE [1, 2]. Differential Evolution is one of the most used algorithm for optimization in the continuous domain, but is highly sensitive to parameters. The self-adaptive aims to remove the responsability of the designer to define the parameters values, given more robustness to the algorithm. The jDE algorithm uses a self-adapting mechanism on the control parameters F (mutation scale factor) and CR (crossover probability), changing his values during the run. This implementation uses DE/rand/1/bin strategy to create mutant vectors.
 
 ***
-#### Requirements
+##### Requirements
 
 - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (tested with 9.2)
 
@@ -16,7 +16,7 @@ $ cd repo
 $ make
 ```
 
-#### Parameters Setting
+##### Parameters Setting
 
 ```
 $ "runs, r"      - Number of Executions
@@ -34,13 +34,13 @@ $ cd repo
 $ ./demo <parameter setting> or make run (with default parameters)
 ```
 
-#### Clean up
+##### Clean up
 
 ```sh
 $ make clean
 ```
 
-### TODO
+##### TODO
 
     - Test efficiency of the selection kernel.
 
