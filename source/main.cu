@@ -40,6 +40,7 @@ void show_params(
 }
 
 int main(int argc, char * argv[]){
+	srand(time(NULL));
 	uint n_runs, NP, n_evals, n_dim, f_id;
 	float F, CR;
 	std::string FuncObj;
@@ -94,7 +95,8 @@ int main(int argc, char * argv[]){
 	printf(" | \t std:          %+.3lf\n", T_std);
 	printf(" +==============================================================+ \n");
 
-	jDE * jde = new jDE(20, 10);
+	jDE * jde = new jDE(20, 10, -0.523, +3.231);
 	jde->run();
+	jde->index_gen();
 	return 0;
 }

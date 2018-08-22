@@ -3,8 +3,14 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
+#include <curand.h>
 #include <curand_kernel.h>
+#include <device_launch_parameters.h>
+#include <thrust/fill.h>
+#include <thrust/execution_policy.h>
+#include <thrust/sequence.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <stdio.h>
 
 template<class T>

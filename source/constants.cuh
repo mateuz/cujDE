@@ -6,9 +6,12 @@ typedef struct {
     float x_max;
     uint n_dim;
     uint ps;
-} config;
+} Configuration;
 
 extern __constant__ float shift[1000];
-extern __constant__ config params;
+extern __constant__ Configuration params;
+extern __constant__  float F_Lower;
+extern __constant__  float F_Upper;
+extern __constant__  float T;
 
 #endif
