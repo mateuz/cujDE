@@ -87,7 +87,7 @@ __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
   	localState = g_state[index];
 
   	//(0, 1]
-  	double r1, r2, r3, r4;
+  	float r1, r2, r3, r4;
   	r1 = curand_uniform(&localState);
   	r2 = curand_uniform(&localState);
   	r3 = curand_uniform(&localState);
@@ -143,14 +143,20 @@ __global__ void DE(curandState * rng, float * og, float * ng, float * F, float *
     uint n1, n2, n3, p1, p2, p3, p4;
     n_dim = params.n_dim;
 
-    n1 = fseq[index];
-    n2 = fseq[index + ps];
-    n3 = fseq[index + ps + ps];
-
     float mF  = F[index];
     float mCR = CR[index];
 
     curandState random = rng[index];
+
+    n1 = fseq[index];
+    n2 = fseq[index + ps];
+    n3 = fseq[index + ps + ps];
+
+    /*
+    do n1 = curand(&random)%ps; while (n1 == index);
+    do n2 = curand(&random)%ps; while (n2 == index || n2 == n1 );
+    do n3 = curand(&random)%ps; while (n3 == index || n3 == n1 || n3 == n2);
+    */
 
     p1 = index * n_dim;
     p2 = n3 * n_dim;
@@ -159,6 +165,7 @@ __global__ void DE(curandState * rng, float * og, float * ng, float * F, float *
     //printf("[%u] %u %u %u => %u %u %u %u\n", index, n1, n2, n3, p4, p3, p2, p1);
     for( i = 0; i < n_dim; i++ ){
       if( curand_uniform(&random) <= mCR || (i == n_dim - 1) ){
+        /* Get three mutually different indexs */
         ng[p1 + i] = og[p2 + i] + mF * (og[p3 + i] - og[p4 + i]);
 
         /* Check bounds */

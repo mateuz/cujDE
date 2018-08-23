@@ -27,6 +27,8 @@ namespace po = boost::program_options;
 #include "Benchmarks.cuh"
 #include "F1.cuh"
 #include "F2.cuh"
+#include "F3.cuh"
+#include "F4.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -118,7 +120,7 @@ int main(int argc, char * argv[]){
 
 	thrust::device_vector<float>::iterator it;
 
-	Benchmarks * B = new F2(n_dim, NP);
+	Benchmarks * B = new F4(n_dim, NP);
 	float x_min = B->getMin();
 	float x_max = B->getMax();
 
@@ -138,7 +140,7 @@ int main(int argc, char * argv[]){
 			jde->run(p_og, p_ng);
 			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
-			//jde->update();
+			jde->update();
 	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);

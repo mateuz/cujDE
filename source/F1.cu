@@ -34,7 +34,7 @@ F1::F1(uint _dim, uint _ps):Benchmarks()
 
 F1::~F1()
 {
-  /*empty*/
+  /* empty */
 }
 
 __global__ void computeK(float * x, float * f){

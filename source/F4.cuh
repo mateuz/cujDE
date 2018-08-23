@@ -13,6 +13,6 @@ public:
   void compute(float * x, float * fitness);
 };
 
-__global__ void computeK(float * x, float * f);
+__global__ void computeK4(float * x, float * f);
 
 #endif
