@@ -9,7 +9,7 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   checkCudaErrors(cudaMalloc((void **)&F,  NP * sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&CR, NP * sizeof(float)));
   thrust::fill(thrust::device, F , F  + NP, 0.50);
-  thrust::fill(thrust::device, CR, CR + NP, 0.90);
+  thrust::fill(thrust::device, CR, CR + NP, 0.30);
 
   Configuration conf;
   conf.x_min = x_min;

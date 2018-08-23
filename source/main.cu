@@ -26,6 +26,7 @@ namespace po = boost::program_options;
 
 #include "Benchmarks.cuh"
 #include "F1.cuh"
+#include "F2.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -117,7 +118,7 @@ int main(int argc, char * argv[]){
 
 	thrust::device_vector<float>::iterator it;
 
-	Benchmarks * B = new F1(n_dim, NP);
+	Benchmarks * B = new F2(n_dim, NP);
 	float x_min = B->getMin();
 	float x_max = B->getMax();
 
@@ -137,7 +138,7 @@ int main(int argc, char * argv[]){
 			jde->run(p_og, p_ng);
 			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
-			jde->update();
+			//jde->update();
 	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -168,8 +169,8 @@ int main(int argc, char * argv[]){
 	printf(" |                     EXPERIMENTS RESULTS                      | \n");
 	printf(" +==============================================================+ \n");
 	printf(" | Objective Function:\n");
-	printf(" | \t mean:         %+.10E\n", FO_mean);
-	printf(" | \t std:          %+.10E\n", FO_std);
+	printf(" | \t mean:         %+.20E\n", FO_mean);
+	printf(" | \t std:          %+.20E\n", FO_std);
 	printf(" | Execution Time (ms): \n");
 	printf(" | \t mean:         %+.3lf\n", T_mean);
 	printf(" | \t std:          %+.3lf\n", T_std);
