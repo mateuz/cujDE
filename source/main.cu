@@ -64,10 +64,50 @@ void show_params(
 	printf(" | Number of Blocks                         %d\n", (NP%32)? (NP/32)+1 : NP/32);
 }
 
+std::string toString(uint id){
+  switch( id ){
+    case 1:
+      return "Shifted Sphere";
+    case 2:
+      return "Shifted Rosenbrock";
+    case 3:
+      return "Shifted Griewank";
+    case 4:
+      return "Shifted Rastringin";
+    default:
+      return "Unknown";
+  }
+}
+
+Benchmarks * getFunction(uint id, uint n_dim, uint ps){
+  Benchmarks * n;
+
+  if( id == 1 ){
+    n = new F1(n_dim, ps);
+    return n;
+  }
+
+  if( id == 2 ){
+    n = new F2(n_dim, ps);
+    return n;
+  }
+
+  if( id == 3 ){
+    n = new F3(n_dim, ps);
+    return n;
+  }
+
+  if( id == 4 ){
+    n = new F4(n_dim, ps);
+    return n;
+  }
+
+  return NULL;
+}
+
 int main(int argc, char * argv[]){
 	srand(time(NULL));
 	uint n_runs, NP, n_evals, n_dim, f_id;
-	std::string FuncObj;
 
 	try{
 		po::options_description config("Opções");
@@ -96,7 +136,7 @@ int main(int argc, char * argv[]){
 	printf(" +==============================================================+ \n");
 	printf(" |                      EXECUTION PARAMETERS                    | \n");
 	printf(" +==============================================================+ \n");
-	show_params(n_runs, NP, n_evals, n_dim, FuncObj);
+	show_params(n_runs, NP, n_evals, n_dim, toString(f_id));
 	printf(" +==============================================================+ \n");
 
 	cudaEvent_t start, stop;
@@ -120,7 +160,13 @@ int main(int argc, char * argv[]){
 
 	thrust::device_vector<float>::iterator it;
 
-	Benchmarks * B = new F4(n_dim, NP);
+	Benchmarks * B = NULL;
+  B = getFunction(f_id, n_dim, NP);
+
+  if( B == NULL ){
+     printf("Unknown function! Exiting...\n");
+     exit(EXIT_FAILURE);
+  }
 	float x_min = B->getMin();
 	float x_max = B->getMax();
 
