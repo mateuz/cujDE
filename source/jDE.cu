@@ -9,7 +9,7 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   checkCudaErrors(cudaMalloc((void **)&F,  NP * sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&CR, NP * sizeof(float)));
   thrust::fill(thrust::device, F , F  + NP, 0.50);
-  thrust::fill(thrust::device, CR, CR + NP, 0.30);
+  thrust::fill(thrust::device, CR, CR + NP, 0.90);
 
   Configuration conf;
   conf.x_min = x_min;
@@ -119,6 +119,8 @@ __global__ void selectionK(float * og, float * ng, float * fog, float * fng){
   if( index < ps ){
     if( fng[index] <= fog[index] ){
       uint ndim = params.n_dim;
+      //for( uint j = 0; j < ndim; j++ )
+      //  og[ (ndim * index) + j] = ng[ (ndim * index) + j];
       memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
       fog[index] = fng[index];
    }
