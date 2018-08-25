@@ -174,19 +174,21 @@ int main(int argc, char * argv[]){
 
 	std::vector< std::pair<float, float> > stats;
 	for( int i = 1; i <= n_runs; i++ ){
-		jDE * jde = new jDE(NP, n_dim, x_min, x_max);
-		// Randomly initiate the population
+    jDE * jde = new jDE(NP, n_dim, x_min, x_max);
+
+    cudaEventRecord(start);
+
+    // Randomly initiate the population
 		thrust::counting_iterator<uint> isb(0);
 		thrust::transform(isb, isb + (n_dim * NP), d_og.begin(), prg(x_min, x_max));
 		/* Starts a Run */
 		B->compute(p_og, p_fog);
-		cudaEventRecord(start);
 		for( uint evals = 0; evals < n_evals; evals += NP ){
 			jde->index_gen();
 			jde->run(p_og, p_ng);
 			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
-			jde->update();
+			//jde->update();
 	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);

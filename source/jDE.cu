@@ -9,7 +9,7 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   checkCudaErrors(cudaMalloc((void **)&F,  NP * sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&CR, NP * sizeof(float)));
   thrust::fill(thrust::device, F , F  + NP, 0.50);
-  thrust::fill(thrust::device, CR, CR + NP, 0.90);
+  thrust::fill(thrust::device, CR, CR + NP, 0.30);
 
   Configuration conf;
   conf.x_min = x_min;
@@ -105,7 +105,7 @@ __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
 
 /*
  * Performs the selection step
- * In this case, aach thread is a individual
+ * In this case, each thread is a individual
  * og -> Old genes, the previous generation offspring
  * ng -> New genes, the new generation offsprings
  * fog -> fitness of the old offspring
