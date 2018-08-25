@@ -119,8 +119,6 @@ __global__ void selectionK(float * og, float * ng, float * fog, float * fng){
   if( index < ps ){
     if( fng[index] <= fog[index] ){
       uint ndim = params.n_dim;
-      //for( uint j = 0; j < ndim; j++ )
-      //  og[ (ndim * index) + j] = ng[ (ndim * index) + j];
       memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
       fog[index] = fng[index];
    }
@@ -154,11 +152,9 @@ __global__ void DE(curandState * rng, float * og, float * ng, float * F, float *
     n2 = fseq[index + ps];
     n3 = fseq[index + ps + ps];
 
-    /*
-    do n1 = curand(&random)%ps; while (n1 == index);
-    do n2 = curand(&random)%ps; while (n2 == index || n2 == n1 );
-    do n3 = curand(&random)%ps; while (n3 == index || n3 == n1 || n3 == n2);
-    */
+    //do n1 = curand(&random)%ps; while (n1 == index);
+    //do n2 = curand(&random)%ps; while (n2 == index || n2 == n1 );
+    //do n3 = curand(&random)%ps; while (n3 == index || n3 == n1 || n3 == n2);
 
     p1 = index * n_dim;
     p2 = n3 * n_dim;
