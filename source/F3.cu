@@ -53,8 +53,12 @@ __global__ void computeK3(float * x, float * f){
        s2 *= cosf(z/sqrtf(i+1));
     }
     s1 /= 4000.0;
-    //printf("%u => %.20E\n", id_p, res);
-    f[id_p] = (s1 - s2 + 1.0);
+    s1 = (s1 - s2 + 1.0);
+
+    if( s1 <= 10e-08 )
+      s1 = 0.0f;
+    
+    f[id_p] = s1;
   }
 }
 

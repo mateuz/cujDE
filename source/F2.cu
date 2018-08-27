@@ -56,7 +56,9 @@ __global__ void computeK2(float * x, float * f){
       t = (a - 1.00);
       res += (t * t);
     }
-    //printf("%u => %.20E\n", id_p, res);
+    if( res <= 10e-08 )
+      res = 0.0f;
+    
     f[id_p] = res;
   }
 }

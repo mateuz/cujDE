@@ -188,7 +188,7 @@ int main(int argc, char * argv[]){
 			jde->run(p_og, p_ng);
 			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
-			//jde->update();
+			jde->update();
 	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);

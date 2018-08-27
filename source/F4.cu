@@ -51,6 +51,8 @@ __global__ void computeK4(float * x, float * f){
        z = x[id_d + i] - shift[i];
        s += (z * z) - 10.0 * cospi(2.0 * z) + 10.0;
     }
+    if( s <= 10e-08 )
+      s = 0.0f;
     f[id_p] = s;
   }
 }

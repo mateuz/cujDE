@@ -49,6 +49,9 @@ __global__ void computeK(float * x, float * f){
       res += (a * a);
     }
     //printf("%u => %.2f\n", id_p, res);
+    if( res <= 10e-08 )
+      res = 0.0f;
+    
     f[id_p] = res;
   }
 }
