@@ -44,7 +44,9 @@ $ make clean
 
     - Test efficiency of the selection kernel.
 
-    - ~~Auto adjust the number of blocks and threads.~~
+    - ~Auto adjust the number of blocks and threads.~
+    
+    - Dimension parallelization of the DE operation
 
 ***
 
