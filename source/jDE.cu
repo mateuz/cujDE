@@ -32,6 +32,10 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   unsigned int seed = rd();
   setup_kernel<<<n_blocks, n_threads>>>(d_states, seed);
   checkCudaErrors(cudaGetLastError());
+
+  //checkCudaErrors(cudaMalloc((void **)&d_states2, NP * n_dim * sizeof(curandStateXORWOW_t)));
+  //sk2<<<NP, 128>>>(d_states2, seed);
+  //checkCudaErrors(cudaGetLastError());
 }
 
 jDE::~jDE()
@@ -58,6 +62,7 @@ void jDE::update(){
  */
 void jDE::run(float * og, float * ng){
   DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
+  //mDE<<<NP, 128>>>(d_states2, og, ng, F, CR, fseq);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -177,6 +182,50 @@ __global__ void DE(curandState * rng, float * og, float * ng, float * F, float *
   }
 }
 
+
+__global__ void mDE(curandState *rng, float * og, float * ng, float * F, float * CR, uint * fseq){
+  uint id_g, id_d, id_p, ps, n_dim;
+
+  id_g = threadIdx.x + blockDim.x * blockIdx.x;
+  id_d = blockIdx.x;
+	id_p = threadIdx.x;
+
+  n_dim = params.n_dim;
+  ps = params.ps;
+
+  if( id_p < n_dim ){
+    __shared__ uint n1, n2, n3, p1, p2, p3, p4;
+    __shared__ float mF, mCR;
+
+    if( id_p == 0 ){
+      n1 = fseq[id_d];
+      n2 = fseq[id_d + ps];
+      n3 = fseq[id_d + ps + ps];
+
+      mF  = F[id_d];
+      mCR = CR[id_d];
+
+      p1 = id_d * n_dim;
+      p2 = n3 * n_dim;
+      p3 = n2 * n_dim;
+      p4 = n1 * n_dim;
+    }
+
+    __syncthreads();
+
+    curandState random = rng[id_g];
+
+    if( curand_uniform(&random) <= mCR || (id_p == (n_dim-1)) ){
+      ng[p1 + id_p] = og[p2 + id_p] + mF * (og[p3 + id_p] - og[p4 + id_p]);
+
+      ng[p1 + id_p] = max(params.x_min, ng[p1 + id_p]);
+      ng[p1 + id_p] = min(params.x_max, ng[p1 + id_p]);
+    } else {
+      ng[p1 + id_p] = og[p1 + id_p];
+    }
+    rng[id_g] = random;
+  }
+}
 /*
  * Generate 3 different indexs to DE/rand/1/bin.
  * @TODO:
@@ -216,5 +265,16 @@ __global__ void iGen(curandState * g_state, uint * rseq, uint * fseq){
 __global__ void setup_kernel(curandState * random, uint seed){
 	uint index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index < params.ps)
+		curand_init(seed, index, 0, &random[index]);
+}
+
+/*
+ *
+ * Setup kernel version 2
+ *
+ */
+__global__ void sk2(curandState * random, uint seed){
+	uint index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index < params.ps * params.n_dim)
 		curand_init(seed, index, 0, &random[index]);
 }
