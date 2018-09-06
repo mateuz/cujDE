@@ -51,12 +51,72 @@ __global__ void computeK(float * x, float * f){
     //printf("%u => %.2f\n", id_p, res);
     if( res <= 10e-08 )
       res = 0.0f;
-    
+
     f[id_p] = res;
   }
 }
 
+__global__ void computeK_F1(float * x, float * f){
+  //uint id_g = threadIdx.x + (blockIdx.x * blockDim.x);
+  uint id_p = blockIdx.x;
+  uint id_d = threadIdx.x;
+
+  //uint ps = params.ps;
+  uint ndim = params.n_dim;
+
+  __shared__ float z[128];
+
+  z[id_d] = 0.0;
+
+  if( id_d < ndim ){
+    float t = x[(id_p * ndim) + id_d] - shift[id_d];
+    z[id_d] = (t * t);
+  }
+
+  __syncthreads();
+
+  /* Simple reduce sum */
+  if( id_d < 64 )
+    z[id_d] += z[id_d + 64];
+
+  __syncthreads();
+
+  if( id_d < 32 )
+    z[id_d] += z[id_d + 32];
+
+  __syncthreads();
+
+  if( id_d < 16 )
+    z[id_d] += z[id_d + 16];
+
+  __syncthreads();
+
+  if( id_d < 8 )
+    z[id_d] += z[id_d + 8];
+
+  __syncthreads();
+
+  if( id_d < 4 )
+    z[id_d] += z[id_d + 4];
+
+  __syncthreads();
+
+  if( id_d < 2 )
+    z[id_d] += z[id_d + 2];
+
+  __syncthreads();
+
+  if( id_d == 0 )
+    z[id_d] += z[id_d + 1];
+
+  __syncthreads();
+
+  if( id_d == 0 )
+    f[id_p] = z[0];
+}
+
 void F1::compute(float * x, float * f){
   computeK<<< n_blocks, n_threads >>>(x, f);
+  //computeK_F1<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
