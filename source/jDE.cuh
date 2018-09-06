@@ -20,6 +20,7 @@ protected:
   uint NP;
   uint n_dim;
   uint n_threads;
+  uint n_threads_2;
   uint n_blocks;
 
   float x_min;
@@ -38,13 +39,18 @@ public:
   jDE( uint, uint, float, float );
   ~jDE();
 
+  /* auxiliar functions */
   uint iDivUp(uint a, uint b);
+  uint nextPowerOf2(uint);
+
+  /* jDE functions */
   void run(float *, float *);
   void update();
   void selection(float *, float *, float *, float *);
   void index_gen();
 };
 
+/* CUDA Kernels */
 __global__ void updateK(curandState *, float *, float *);
 
 __global__ void selectionK(float *, float *, float *, float *);

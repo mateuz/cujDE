@@ -25,8 +25,11 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
 
   n_threads = 32;
   n_blocks = iDivUp(NP, n_threads);
-
   //printf("nThreads(): %u nBlocks(): %u\n", nt, nb);
+
+  n_threads_2 = nextPowerOf2(n_dim);
+  //printf("#2 nThreads(): %d\n", n_threads_2);
+
 
   std::random_device rd;
   unsigned int seed = rd();
@@ -34,7 +37,7 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   checkCudaErrors(cudaGetLastError());
 
   //checkCudaErrors(cudaMalloc((void **)&d_states2, NP * n_dim * sizeof(curandStateXORWOW_t)));
-  //sk2<<<NP, 128>>>(d_states2, seed);
+  //sk2<<<NP, n_threads_2>>>(d_states2, seed);
   //checkCudaErrors(cudaGetLastError());
 }
 
@@ -51,6 +54,22 @@ uint jDE::iDivUp(uint a, uint b)
   return (a%b)? (a/b)+1 : a/b;
 }
 
+uint jDE::nextPowerOf2(uint n){
+  uint count = 0;
+
+  // First n in the below condition
+  // is for the case where n is 0
+  if(n && !(n & (n - 1)))
+    return n;
+
+  while( n != 0 ){
+    n >>= 1;
+    count++;
+  }
+
+  return 1 << count;
+}
+
 void jDE::update(){
   updateK<<<n_blocks, n_threads>>>(d_states, F, CR);
   checkCudaErrors(cudaGetLastError());
@@ -62,7 +81,7 @@ void jDE::update(){
  */
 void jDE::run(float * og, float * ng){
   DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
-  //mDE<<<NP, 128>>>(d_states2, og, ng, F, CR, fseq);
+  //mDE<<<NP, n_threads_2>>>(d_states2, og, ng, F, CR, fseq);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -223,6 +242,7 @@ __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float *
     } else {
       ng[p1 + id_p] = og[p1 + id_p];
     }
+
     rng[id_g] = random;
   }
 }
