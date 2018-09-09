@@ -30,6 +30,7 @@ namespace po = boost::program_options;
 #include "F3.cuh"
 #include "F4.cuh"
 #include "F5.cuh"
+#include "F6.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -77,6 +78,8 @@ std::string toString(uint id){
       return "Shifted Rastringin";
     case 5:
       return "Rotated Rosenbrock";
+    case 6:
+      return "Rotated Griewank";
     default:
       return "Unknown";
   }
@@ -107,6 +110,11 @@ Benchmarks * getFunction(uint id, uint n_dim, uint ps){
 
   if( id == 5 ){
     n = new F5(n_dim, ps);
+    return n;
+  }
+
+  if( id == 6 ){
+    n = new F6(n_dim, ps);
     return n;
   }
 

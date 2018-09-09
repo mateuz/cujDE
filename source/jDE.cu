@@ -220,9 +220,10 @@ __global__ void DE(curandState * rng, float * og, float * ng, float * F, float *
 
 
 __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float * CR, uint * fseq){
-  uint id_g, id_d, id_p, ps, n_dim;
+  uint id_d, id_p, ps, n_dim;
 
-  id_g = threadIdx.x + blockDim.x * blockIdx.x;
+  //id_g = threadIdx.x + blockDim.x * blockIdx.x;
+
   id_d = blockIdx.x;
 	id_p = threadIdx.x;
 
