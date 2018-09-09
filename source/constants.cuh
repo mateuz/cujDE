@@ -11,7 +11,7 @@
  * | float     |      4        |
  * | double    |      8        |
  * | ---------------------------
- * | Total     |  4028 / 65536 |
+ * | Total     | 40428 / 65536 |
  * | ---------------------------
  */
 
@@ -23,6 +23,7 @@ typedef struct {
 } Configuration;
 
 extern __constant__ float shift[100];
+extern __constant__ float m_rotation[10000];
 extern __constant__ Configuration params;
 extern __constant__  float F_Lower;
 extern __constant__  float F_Upper;
