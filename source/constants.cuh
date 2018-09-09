@@ -22,7 +22,7 @@ typedef struct {
     uint ps;
 } Configuration;
 
-extern __constant__ float shift[1000];
+extern __constant__ float shift[100];
 extern __constant__ Configuration params;
 extern __constant__  float F_Lower;
 extern __constant__  float F_Upper;
