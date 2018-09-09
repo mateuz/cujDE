@@ -47,6 +47,7 @@ public:
   void run(float *, float *);
   void update();
   void selection(float *, float *, float *, float *);
+  void selectionS(float *, float *, float *, float *);
   void index_gen();
 };
 

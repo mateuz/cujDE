@@ -36,9 +36,9 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   setup_kernel<<<n_blocks, n_threads>>>(d_states, seed);
   checkCudaErrors(cudaGetLastError());
 
-  //checkCudaErrors(cudaMalloc((void **)&d_states2, NP * n_dim * sizeof(curandStateXORWOW_t)));
-  //sk2<<<NP, n_threads_2>>>(d_states2, seed);
-  //checkCudaErrors(cudaGetLastError());
+  checkCudaErrors(cudaMalloc((void **)&d_states2, NP * n_dim * sizeof(curandStateXORWOW_t)));
+  sk2<<<NP, n_threads_2>>>(d_states2, seed);
+  checkCudaErrors(cudaGetLastError());
 }
 
 jDE::~jDE()
@@ -80,8 +80,8 @@ void jDE::update(){
  * fng == fitness of the new offspring
  */
 void jDE::run(float * og, float * ng){
-  DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
-  //mDE<<<NP, n_threads_2>>>(d_states2, og, ng, F, CR, fseq);
+  //DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
+  mDE<<<NP, n_threads_2>>>(d_states2, og, ng, F, CR, fseq);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -93,6 +93,23 @@ void jDE::index_gen(){
 void jDE::selection(float * og, float * ng, float * fog, float * fng){
   selectionK<<<n_blocks, n_threads>>>(og, ng, fog, fng);
   checkCudaErrors(cudaGetLastError());
+}
+
+/*
+ * Implements a sequential selection to test efficiency
+ *
+ * Already tested, in the worst case is slow than the selectionK
+ *
+ */
+void jDE::selectionS(float * og, float * ng, float * fog, float * fng){
+  thrust::device_ptr<float> a = thrust::device_pointer_cast(fng);
+  thrust::device_ptr<float> b = thrust::device_pointer_cast(fog);
+  for( uint i = 0; i < NP; i++ ){
+    if( a[i] < b[i] ){
+      cudaMemcpy(og + (n_dim * i), ng + (n_dim * i), n_dim * sizeof(float), cudaMemcpyDeviceToDevice);
+      b[i] = a[i];
+    }
+  }
 }
 
 /*
