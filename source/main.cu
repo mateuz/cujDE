@@ -29,6 +29,7 @@ namespace po = boost::program_options;
 #include "F2.cuh"
 #include "F3.cuh"
 #include "F4.cuh"
+#include "F5.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -74,6 +75,8 @@ std::string toString(uint id){
       return "Shifted Griewank";
     case 4:
       return "Shifted Rastringin";
+    case 5:
+      return "Rotated Rosenbrock";
     default:
       return "Unknown";
   }
@@ -99,6 +102,11 @@ Benchmarks * getFunction(uint id, uint n_dim, uint ps){
 
   if( id == 4 ){
     n = new F4(n_dim, ps);
+    return n;
+  }
+
+  if( id == 5 ){
+    n = new F5(n_dim, ps);
     return n;
   }
 
@@ -188,7 +196,7 @@ int main(int argc, char * argv[]){
 			jde->run(p_og, p_ng);
 			B->compute(p_ng, p_fng);
 			jde->selection(p_og, p_ng, p_fog, p_fng);
-			jde->update();
+		  jde->update();
 	  }
 		cudaEventRecord(stop);
     cudaEventSynchronize(stop);
