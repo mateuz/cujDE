@@ -30,7 +30,6 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   n_threads_2 = nextPowerOf2(n_dim);
   //printf("#2 nThreads(): %d\n", n_threads_2);
 
-
   std::random_device rd;
   unsigned int seed = rd();
   setup_kernel<<<n_blocks, n_threads>>>(d_states, seed);
@@ -81,6 +80,7 @@ void jDE::update(){
  */
 void jDE::run(float * og, float * ng){
   //DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
+  //printf("NB: %d, NT: %d\n", NP, n_threads_2);
   mDE<<<NP, n_threads_2>>>(d_states2, og, ng, F, CR, fseq);
   checkCudaErrors(cudaGetLastError());
 }
@@ -158,8 +158,8 @@ __global__ void selectionK(float * og, float * ng, float * fog, float * fng){
   uint ps = params.ps;
 
   if( index < ps ){
+    uint ndim = params.n_dim;
     if( fng[index] <= fog[index] ){
-      uint ndim = params.n_dim;
       memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
       fog[index] = fng[index];
    }
@@ -249,7 +249,7 @@ __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float *
 
     __syncthreads();
 
-    curandState random = rng[id_g];
+    curandState random = rng[ id_d * id_p ];
 
     if( curand_uniform(&random) <= mCR || (id_p == (n_dim-1)) ){
       ng[p1 + id_p] = og[p2 + id_p] + mF * (og[p3 + id_p] - og[p4 + id_p]);
@@ -260,7 +260,7 @@ __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float *
       ng[p1 + id_p] = og[p1 + id_p];
     }
 
-    rng[id_g] = random;
+    rng[id_d * id_p ] = random;
   }
 }
 /*
