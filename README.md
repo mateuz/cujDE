@@ -63,6 +63,10 @@ $ make clean
 
 - :x: Add Shift and Rotated Rastrigin function as defined in CEC'13 Real-Parameter Optimization Competetition
 
+- :x: Test the use of cuBLAS to apply rotation
+
+- :x: Complex functions evaluation in parallel by dimension
+
 
 ***
 
