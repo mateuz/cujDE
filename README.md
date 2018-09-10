@@ -7,6 +7,8 @@
 
 - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (tested with 9.2)
 
+- GPU Compute Capability (tested with :heavy_check_mark: 5.2 :heavy_check_mark: 6.1)
+
 - [Boost C++ Libraries - Program Options](https://www.boost.org/) (tested with 1.58.0)
 
 ##### Compile
@@ -21,11 +23,22 @@ $ make
 ```
 $ "runs, r"      - Number of Executions
 $ "pop_size, p"  - Population Size
-$ "dim, d"       - Number of Dimensions
-$ "func_obj, o"  - Function to Optimize [1,4]
+$ "dim, d"       - Number of Dimensions {2, 5, 10, 20, 30, 50, 100}
+$ "func_obj, o"  - Function to Optimize [1,6]
 $ "max_eval, e"  - Number of Function Evaluations
 $ "help, h"      - Show this help
 ```
+##### Functions available
+
+| Number   | Function          | Shifted            | Rotated            | Search Space |
+| :---:    | :---              | :---:              | :---:              | :---:        |
+| 01       | S. Sphere         | :heavy_check_mark: | :x:                | [-100, +100] |
+| 02       | S. Rosenbrock     | :heavy_check_mark: | :x:                | [-100, +100] |
+| 03       | S. Griewank       | :heavy_check_mark: | :x:                | [-600, +600] |
+| 04       | S. Rastrigin      | :heavy_check_mark: | :x:                | [-5, +5]     |
+| 05       | S. R. Rosenbrock  | :heavy_check_mark: | :heavy_check_mark: | [-100, +100] |
+| 06       | S. R. Griewank    | :heavy_check_mark: | :heavy_check_mark: | [-600, +600] |
+
 
 ##### Execute
 
@@ -42,11 +55,14 @@ $ make clean
 
 ##### TODO
 
-    - Test efficiency of the selection kernel.
+- :heavy_check_mark: Test efficiency of the selection kernel.
 
-    - ~Auto adjust the number of blocks and threads.~
+- :heavy_check_mark: Auto adjust the number of blocks and threads.
     
-    - Dimension parallelization of the DE operation
+- :heavy_check_mark: Dimension parallelization of the DE operation (:star2: Kernel called mDE)
+
+- :x: Add Shift and Rotated Rastrigin function as defined in CEC'13 Real-Parameter Optimization Competetition
+
 
 ***
 
