@@ -87,25 +87,33 @@ __global__ void computeK2_F5(float * x, float * f){
   __shared__ float r[128];
   __shared__ float z[100];
   __shared__ float R[10000];
+  __shared__ float z_rot[100];
 
   r[id_d] = 0.0f;
 
   if( id_d < ndim ){
     z[id_d] = (x[stride+id_d] - shift[id_d]) * 0.02048;
-    R[id_d] = m_rotation[id_d * ndim];
+    //each dimension load your rotation column from rotation matrix
+    for( i = 0; i < ndim; i++ ){
+      R[(id_d*ndim)+i] = m_rotation[(id_d*ndim)+i];
+    }
   }
 
   __syncthreads();
 
-  if( id_d < (ndim-1) && id_p < ps ){
-    //rotation;
-    a = b = 0.0;
+  if( id_d < ndim ){
+    z_rot[id_d] = 0.0;
     for( i = 0; i < ndim; i++ ){
-      a += z[i] * R[id_d    +i];
-      b += z[i] * R[(id_d+1)+i];
+      z_rot[id_d] += z[i] * R[(id_d*ndim)+i];
     }
-    a += 1.0;
-    b += 1.0;
+    z_rot[id_d] += 1.0;
+  }
+
+  __syncthreads();
+
+  if( id_d < (ndim-1) ){
+    a = z_rot[id_d];
+    b = z_rot[id_d+1];
     t1 = b - (a * a);
     t2 = a - 1.0;
 
@@ -200,7 +208,7 @@ __global__ void computeK_F5(float * x, float * f){
 }
 
 void F5::compute(float * x, float * f){
-  //computeK_F5<<< n_blocks, n_threads >>>(x, f);
-  computeK2_F5<<< ps, 128 >>>(x, f);
+  computeK_F5<<< n_blocks, n_threads >>>(x, f);
+  //computeK2_F5<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
