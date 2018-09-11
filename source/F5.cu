@@ -72,6 +72,98 @@ F5::~F5()
   /*empty*/
 }
 
+
+__global__ void computeK2_F5(float * x, float * f){
+  uint id_p, id_d, ps, ndim, i, stride;
+
+  id_p = blockIdx.x;
+  id_d = threadIdx.x;
+  ps = params.ps;
+  ndim = params.n_dim;
+  stride = id_p * ndim;
+
+  float a, b, t1, t2;
+
+  __shared__ float r[128];
+  __shared__ float z[100];
+  __shared__ float R[10000];
+
+  r[id_d] = 0.0f;
+
+  //id_d load z to every block index
+  if( id_d == 0 ){
+    for( i = 0; i < ndim; i++ ){
+      z[i] = (x[stride+i] - shift[i]) * 0.02048;
+    }
+  }
+
+  __syncthreads();
+
+  if( id_d < ndim )
+    R[id_d] = m_rotation[id_d * ndim];
+
+  __syncthreads();
+
+  if( id_d < (ndim-1) && id_p < ps ){
+    //rotation;
+    a = b = 0.0;
+    for( i = 0; i < ndim; i++ ){
+      a += z[i] * R[id_d    + i];
+      b += z[i] * R[(id_d+1)+i];
+    }
+    a += 1.0;
+    b += 1.0;
+    t1 = b - (a * a);
+    t2 = a - 1.0;
+
+    t1 *= t1;
+    t2 *= t2;
+
+    r[id_d] = (100.0 * t1) + t2;
+
+    __syncthreads();
+
+    /* Simple reduce sum */
+    if( id_d < 64 )
+      r[id_d] += r[id_d + 64];
+
+    __syncthreads();
+
+    if( id_d < 32 )
+      r[id_d] += r[id_d + 32];
+
+    __syncthreads();
+
+    if( id_d < 16 )
+      r[id_d] += r[id_d + 16];
+
+    __syncthreads();
+
+    if( id_d < 8 )
+      r[id_d] += r[id_d + 8];
+
+    __syncthreads();
+
+    if( id_d < 4 )
+      r[id_d] += r[id_d + 4];
+
+    __syncthreads();
+
+    if( id_d < 2 )
+      r[id_d] += r[id_d + 2];
+
+    __syncthreads();
+
+    if( id_d == 0 )
+      r[id_d] += r[id_d + 1];
+
+    __syncthreads();
+
+    if( id_d == 0 )
+      f[id_p] = r[0];
+  }
+}
+
 __global__ void computeK_F5(float * x, float * f){
   uint id_p = threadIdx.x + (blockIdx.x * blockDim.x);
   uint ps = params.ps;
@@ -115,6 +207,7 @@ __global__ void computeK_F5(float * x, float * f){
 }
 
 void F5::compute(float * x, float * f){
-  computeK_F5<<< n_blocks, n_threads >>>(x, f);
+  //computeK_F5<<< n_blocks, n_threads >>>(x, f);
+  computeK2_F5<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
