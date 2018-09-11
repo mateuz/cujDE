@@ -42,11 +42,10 @@ F2::~F2()
 
 
 __global__ void computeK_F2_2(float * x, float * f){
-  uint id_p, id_d, ps, ndim, i, stride;
+  uint id_p, id_d, ndim, stride;
 
   id_p = blockIdx.x;
   id_d = threadIdx.x;
-  ps = params.ps;
   ndim = params.n_dim;
   stride = id_p * ndim;
 
@@ -57,17 +56,13 @@ __global__ void computeK_F2_2(float * x, float * f){
 
   r[id_d] = 0.0f;
 
-  //id_d load z to every block index
-  if( id_d == 0 ){
-    for( i = 0; i < ndim; i++ ){
-      z[i] = x[stride+i] - shift[i];
-      z[i] += 1.0f;
-    }
+  if( id_d < ndim ){
+    z[id_d] = x[stride + id_d] - shift[id_d] + 1.0f;
   }
 
   __syncthreads();
 
-  if( id_d < (ndim-1) && id_p < ps ){
+  if( id_d < (ndim-1) ){
     a = z[id_d];
     b = z[id_d+1];
 
@@ -146,7 +141,7 @@ __global__ void computeK2(float * x, float * f){
 }
 
 void F2::compute(float * x, float * f){
-  computeK2<<< n_blocks, n_threads >>>(x, f);
-  //computeK_F2_2<<< 50, 128 >>>(x, f);
+  //computeK2<<< n_blocks, n_threads >>>(x, f);
+  computeK_F2_2<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
