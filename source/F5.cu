@@ -90,18 +90,10 @@ __global__ void computeK2_F5(float * x, float * f){
 
   r[id_d] = 0.0f;
 
-  //id_d load z to every block index
-  if( id_d == 0 ){
-    for( i = 0; i < ndim; i++ ){
-      z[i] = (x[stride+i] - shift[i]) * 0.02048;
-    }
-  }
-
-  __syncthreads();
-
-  //load m_rotation to shared memory
-  if( id_d < ndim )
+  if( id_d < ndim ){
+    z[id_d] = (x[stride+id_d] - shift[id_d]) * 0.02048;
     R[id_d] = m_rotation[id_d * ndim];
+  }
 
   __syncthreads();
 
