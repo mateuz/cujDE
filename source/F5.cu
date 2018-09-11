@@ -99,6 +99,7 @@ __global__ void computeK2_F5(float * x, float * f){
 
   __syncthreads();
 
+  //load m_rotation to shared memory
   if( id_d < ndim )
     R[id_d] = m_rotation[id_d * ndim];
 
@@ -108,7 +109,7 @@ __global__ void computeK2_F5(float * x, float * f){
     //rotation;
     a = b = 0.0;
     for( i = 0; i < ndim; i++ ){
-      a += z[i] * R[id_d    + i];
+      a += z[i] * R[id_d    +i];
       b += z[i] * R[(id_d+1)+i];
     }
     a += 1.0;
