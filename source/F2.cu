@@ -40,6 +40,88 @@ F2::~F2()
   /*empty*/
 }
 
+
+__global__ void computeK_F2_2(float * x, float * f){
+  uint id_p, id_d, ps, ndim, i, stride;
+
+  id_p = blockIdx.x;
+  id_d = threadIdx.x;
+  ps = params.ps;
+  ndim = params.n_dim;
+  stride = id_p * ndim;
+
+  float a, b, t1, t2;
+
+  __shared__ float r[128];
+  __shared__ float z[100];
+
+  r[id_d] = 0.0f;
+
+  //id_d load z to every block index
+  if( id_d == 0 ){
+    for( i = 0; i < ndim; i++ ){
+      z[i] = x[stride+i] - shift[i];
+      z[i] += 1.0f;
+    }
+  }
+
+  __syncthreads();
+
+  if( id_d < (ndim-1) && id_p < ps ){
+    a = z[id_d];
+    b = z[id_d+1];
+
+    t1 = b - (a * a);
+    t2 = a - 1.0;
+
+    t1 *= t1;
+    t2 *= t2;
+
+    r[id_d] = (100.0 * t1) + t2;
+
+    __syncthreads();
+
+    /* Simple reduce sum */
+    if( id_d < 64 )
+      r[id_d] += r[id_d + 64];
+
+    __syncthreads();
+
+    if( id_d < 32 )
+      r[id_d] += r[id_d + 32];
+
+    __syncthreads();
+
+    if( id_d < 16 )
+      r[id_d] += r[id_d + 16];
+
+    __syncthreads();
+
+    if( id_d < 8 )
+      r[id_d] += r[id_d + 8];
+
+    __syncthreads();
+
+    if( id_d < 4 )
+      r[id_d] += r[id_d + 4];
+
+    __syncthreads();
+
+    if( id_d < 2 )
+      r[id_d] += r[id_d + 2];
+
+    __syncthreads();
+
+    if( id_d == 0 )
+      r[id_d] += r[id_d + 1];
+
+    __syncthreads();
+
+    if( id_d == 0 )
+      f[id_p] = r[0];
+  }
+}
+
 __global__ void computeK2(float * x, float * f){
   uint id_p = threadIdx.x + (blockIdx.x * blockDim.x);
   uint ps = params.ps;
@@ -58,12 +140,13 @@ __global__ void computeK2(float * x, float * f){
     }
     if( res <= 10e-08 )
       res = 0.0f;
-    
+
     f[id_p] = res;
   }
 }
 
 void F2::compute(float * x, float * f){
   computeK2<<< n_blocks, n_threads >>>(x, f);
+  //computeK_F2_2<<< 50, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
