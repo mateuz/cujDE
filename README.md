@@ -38,6 +38,7 @@ $ "help, h"      - Show this help
 | 04       | S. Rastrigin      | :heavy_check_mark: | :x:                | [-5, +5]     |
 | 05       | S. R. Rosenbrock  | :heavy_check_mark: | :heavy_check_mark: | [-100, +100] |
 | 06       | S. R. Griewank    | :heavy_check_mark: | :heavy_check_mark: | [-600, +600] |
+| 07       | S. R. Rastrigin   | :heavy_check_mark: | :heavy_check_mark: | [-5, +5]     |
 
 
 ##### Execute
@@ -61,12 +62,9 @@ $ make clean
     
 - :heavy_check_mark: Dimension parallelization of the DE operation (:star2: Kernel called mDE)
 
-- :x: Add Shift and Rotated Rastrigin function as defined in CEC'13 Real-Parameter Optimization Competetition
+- :heavy_check_mark: Add Shift and Rotated Rastrigin function as defined in CEC'13 Real-Parameter Optimization Competetition
 
-- :x: Test the use of cuBLAS to apply rotation
-
-- :x: Complex functions evaluation in parallel by dimension
-
+- :heavy_check_mark: Complex functions evaluation in parallel by dimension (F6 and F7)
 
 ***
 
