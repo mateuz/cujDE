@@ -11,6 +11,11 @@ jDE::jDE( uint _s, uint _ndim, float _x_min, float _x_max ):
   thrust::fill(thrust::device, F , F  + NP, 0.50);
   thrust::fill(thrust::device, CR, CR + NP, 0.90);
 
+  checkCudaErrors(cudaMalloc((void **)&T_F,  NP * sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&T_CR, NP * sizeof(float)));
+  thrust::fill(thrust::device, T_F , T_F  + NP, 0.50);
+  thrust::fill(thrust::device, T_CR, T_CR + NP, 0.90);
+
   Configuration conf;
   conf.x_min = x_min;
   conf.x_max = x_max;
@@ -44,8 +49,12 @@ jDE::~jDE()
 {
   checkCudaErrors(cudaFree(F));
   checkCudaErrors(cudaFree(CR));
+  checkCudaErrors(cudaFree(T_F));
+  checkCudaErrors(cudaFree(T_CR));
   checkCudaErrors(cudaFree(rseq));
   checkCudaErrors(cudaFree(fseq));
+  checkCudaErrors(cudaFree(d_states));
+  checkCudaErrors(cudaFree(d_states2));
 }
 
 uint jDE::iDivUp(uint a, uint b)
@@ -70,7 +79,7 @@ uint jDE::nextPowerOf2(uint n){
 }
 
 void jDE::update(){
-  updateK<<<n_blocks, n_threads>>>(d_states, F, CR);
+  updateK<<<n_blocks, n_threads>>>(d_states, F, CR, T_F, T_CR);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -79,9 +88,9 @@ void jDE::update(){
  * fng == fitness of the new offspring
  */
 void jDE::run(float * og, float * ng){
-  //DE<<<n_blocks, n_threads>>>(d_states, og, ng, F, CR, fseq);
+  //DE<<<n_blocks, n_threads>>>(d_states, og, ng, T_F, T_CR, fseq);
   //printf("NB: %d, NT: %d\n", NP, n_threads_2);
-  mDE<<<NP, n_threads_2>>>(d_states2, og, ng, F, CR, fseq);
+  mDE<<<NP, n_threads_2>>>(d_states2, og, ng, T_F, T_CR, fseq);
   checkCudaErrors(cudaGetLastError());
 }
 
@@ -91,25 +100,8 @@ void jDE::index_gen(){
 }
 
 void jDE::selection(float * og, float * ng, float * fog, float * fng){
-  selectionK<<<n_blocks, n_threads>>>(og, ng, fog, fng);
+  selectionK<<<n_blocks, n_threads>>>(og, ng, fog, fng, F, CR, T_F, T_CR);
   checkCudaErrors(cudaGetLastError());
-}
-
-/*
- * Implements a sequential selection to test efficiency
- *
- * Already tested, in the worst case is slow than the selectionK
- *
- */
-void jDE::selectionS(float * og, float * ng, float * fog, float * fng){
-  thrust::device_ptr<float> a = thrust::device_pointer_cast(fng);
-  thrust::device_ptr<float> b = thrust::device_pointer_cast(fog);
-  for( uint i = 0; i < NP; i++ ){
-    if( a[i] < b[i] ){
-      cudaMemcpy(og + (n_dim * i), ng + (n_dim * i), n_dim * sizeof(float), cudaMemcpyDeviceToDevice);
-      b[i] = a[i];
-    }
-  }
 }
 
 /*
@@ -118,7 +110,7 @@ void jDE::selectionS(float * og, float * ng, float * fog, float * fng){
  * F_Lower, F_Upper and T are constant variables declared
  * on constants header
  */
-__global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
+__global__ void updateK(curandState * g_state, float * d_F, float * d_CR, float * d_TF, float * d_TCR) {
 	int index = threadIdx.x + blockDim.x * blockIdx.x;
 
   uint ps = params.ps;
@@ -134,11 +126,17 @@ __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
   	r3 = curand_uniform(&localState);
   	r4 = curand_uniform(&localState);
 
-  	if (r2 < T)
-  		d_F[index] = F_Lower + (r1 * F_Upper);
+  	if (r2 < T){
+  		d_TF[index] = F_Lower + (r1 * F_Upper);
+    } else {
+      d_TF[index] = d_F[index];
+    }
 
-  	if (r4 < T)
-  		d_CR[index] = r3;
+  	if (r4 < T){
+  		d_TCR[index] = r3;
+    } else {
+      d_TCR[index] = d_CR[index];
+    }
 
   	g_state[index] = localState;
   }
@@ -153,7 +151,7 @@ __global__ void updateK(curandState * g_state, float * d_F, float * d_CR) {
  * fng -> fitness of the new offspring
  * ndim -> number of dimensions used to copy the genes
  */
-__global__ void selectionK(float * og, float * ng, float * fog, float * fng){
+__global__ void selectionK(float * og, float * ng, float * fog, float * fng, float * d_F, float * d_CR, float * d_TF, float * d_TCR){
   uint index = threadIdx.x + blockDim.x * blockIdx.x;
   uint ps = params.ps;
 
@@ -161,7 +159,9 @@ __global__ void selectionK(float * og, float * ng, float * fog, float * fng){
     uint ndim = params.n_dim;
     if( fng[index] <= fog[index] ){
       memcpy(og + (ndim * index), ng + (ndim * index), ndim * sizeof(float));
-      fog[index] = fng[index];
+      fog[index]  = fng[index];
+      d_F[index]  = d_TF[index];
+      d_CR[index] = d_TCR[index];
    }
   }
 }

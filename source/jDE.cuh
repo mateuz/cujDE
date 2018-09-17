@@ -35,6 +35,9 @@ protected:
   float * F;
   float * CR;
 
+  float * T_F;
+  float * T_CR;
+
 public:
   jDE( uint, uint, float, float );
   ~jDE();
@@ -47,14 +50,13 @@ public:
   void run(float *, float *);
   void update();
   void selection(float *, float *, float *, float *);
-  void selectionS(float *, float *, float *, float *);
   void index_gen();
 };
 
 /* CUDA Kernels */
-__global__ void updateK(curandState *, float *, float *);
+__global__ void updateK(curandState *, float *, float *, float *, float *);
 
-__global__ void selectionK(float *, float *, float *, float *);
+__global__ void selectionK(float *, float *, float *, float *, float *, float *, float *, float *);
 
 __global__ void DE(curandState *, float *, float *, float *, float *, uint *);
 
