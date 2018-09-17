@@ -51,6 +51,7 @@ public:
   void update();
   void selection(float *, float *, float *, float *);
   void index_gen();
+  void reset();
 };
 
 /* CUDA Kernels */

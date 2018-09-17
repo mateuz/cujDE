@@ -57,6 +57,14 @@ jDE::~jDE()
   checkCudaErrors(cudaFree(d_states2));
 }
 
+void jDE::reset(){
+  thrust::fill(thrust::device, F , F  + NP, 0.50);
+  thrust::fill(thrust::device, CR, CR + NP, 0.90);
+
+  thrust::fill(thrust::device, T_F , T_F  + NP, 0.50);
+  thrust::fill(thrust::device, T_CR, T_CR + NP, 0.90);
+}
+
 uint jDE::iDivUp(uint a, uint b)
 {
   return (a%b)? (a/b)+1 : a/b;
@@ -82,6 +90,7 @@ void jDE::update(){
   updateK<<<n_blocks, n_threads>>>(d_states, F, CR, T_F, T_CR);
   checkCudaErrors(cudaGetLastError());
 }
+
 
 /*
  * fog == fitness of the old offspring
