@@ -31,6 +31,7 @@ namespace po = boost::program_options;
 #include "F4.cuh"
 #include "F5.cuh"
 #include "F6.cuh"
+#include "F7.cuh"
 #include "jDE.cuh"
 
 struct prg
@@ -80,6 +81,8 @@ std::string toString(uint id){
       return "Rotated Rosenbrock";
     case 6:
       return "Rotated Griewank";
+    case 7:
+      return "Rotated Rastrigin";
     default:
       return "Unknown";
   }
@@ -115,6 +118,11 @@ Benchmarks * getFunction(uint id, uint n_dim, uint ps){
 
   if( id == 6 ){
     n = new F6(n_dim, ps);
+    return n;
+  }
+
+  if( id == 7 ){
+    n = new F7(n_dim, ps);
     return n;
   }
 
@@ -187,11 +195,10 @@ int main(int argc, char * argv[]){
 	float x_max = B->getMax();
 
 	float time  = 0.00;
-
+  jDE * jde = new jDE(NP, n_dim, x_min, x_max);
 	std::vector< std::pair<float, float> > stats;
-	for( int i = 1; i <= n_runs; i++ ){
-    jDE * jde = new jDE(NP, n_dim, x_min, x_max);
 
+  for( int i = 1; i <= n_runs; i++ ){
     cudaEventRecord(start);
 
     // Randomly initiate the population
@@ -213,6 +220,8 @@ int main(int argc, char * argv[]){
 		it = thrust::min_element(thrust::device, d_fog.begin(), d_fog.end());
 		printf(" | Execution: %-2d Overall Best: %+.8lf Time(ms): %.8f\n", i, static_cast<float>(*it), time);
 		stats.push_back(std::make_pair(static_cast<float>(*it), time));
+
+    jde->reset();
 	}
 	/* Statistics of the Runs */
 	double FO_mean  = 0.0f, FO_std  = 0.0f;

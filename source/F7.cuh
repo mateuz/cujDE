@@ -10,6 +10,9 @@ public:
   F7( uint, uint );
   ~F7();
 
+
+  float * M2;
+
   void compute(float * x, float * fitness);
 };
 
