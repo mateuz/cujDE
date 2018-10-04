@@ -32,7 +32,7 @@ F5::F5(uint _dim, uint _ps):Benchmarks()
   /* ---------------------------------------------- */
   /* Load a shift vector to test the bench function */
   std::string file_name = "data-files/shift_rosenbrock.mat";
-  std::string vec_name = "Shift - Rosenbrock [-100.0, +100.0]";
+  std::string vec_name = "Shift - Rosenbrock";
   IO * io = new IO();
   std::ifstream file(file_name);
   if( not file.is_open() ){
@@ -208,7 +208,7 @@ __global__ void computeK_F5(float * x, float * f){
 }
 
 void F5::compute(float * x, float * f){
-  computeK_F5<<< n_blocks, n_threads >>>(x, f);
-  //computeK2_F5<<< ps, 128 >>>(x, f);
+  //computeK_F5<<< n_blocks, n_threads >>>(x, f);
+  computeK2_F5<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
