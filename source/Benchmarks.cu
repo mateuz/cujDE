@@ -6,7 +6,7 @@ Benchmarks::Benchmarks()
   max = +100.0;
   n_threads = 1;
   n_blocks = 1;
-  n_dim = 1000;
+  n_dim = 100;
 }
 
 Benchmarks::~Benchmarks()
