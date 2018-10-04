@@ -11,11 +11,13 @@ public:
   ~F7();
 
 
-  float * M2;
+  //float * M2;
 
   void compute(float * x, float * fitness);
 };
 
 __global__ void computeK_F7(float * x, float * f);
+
+__global__ void computeK2_F7(float * x, float * f);
 
 #endif
