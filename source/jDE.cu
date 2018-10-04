@@ -239,8 +239,12 @@ __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float *
   n_dim = params.n_dim;
   ps = params.ps;
 
+  __syncthreads();
+
   if( id_p < n_dim ){
-    __shared__ uint n1, n2, n3, p1, p2, p3, p4;
+    curandState random = rng[ id_d * id_p ];
+    
+    __shared__ uint n1, n2, n3, p1, p2, p3, p4, rnbr;
     __shared__ float mF, mCR;
 
     if( id_p == 0 ){
@@ -255,13 +259,13 @@ __global__ void mDE(curandState *rng, float * og, float * ng, float * F, float *
       p2 = n3 * n_dim;
       p3 = n2 * n_dim;
       p4 = n1 * n_dim;
+
+      rnbr = curand(&random) % n_dim;
     }
 
     __syncthreads();
 
-    curandState random = rng[ id_d * id_p ];
-
-    if( curand_uniform(&random) <= mCR || (id_p == (n_dim-1)) ){
+    if( curand_uniform(&random) <= mCR || (id_p == rnbr) ){
       ng[p1 + id_p] = og[p2 + id_p] + mF * (og[p3 + id_p] - og[p4 + id_p]);
 
       ng[p1 + id_p] = max(params.x_min, ng[p1 + id_p]);
