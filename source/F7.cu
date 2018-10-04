@@ -268,7 +268,7 @@ __global__ void computeK2_F7(float * x, float * f){
     __syncthreads();
 
     /* Simple reduce sum */
-    if( id_d < 64 )
+    if( id_d < 64 && ndim == 100 )
       r[id_d] += r[id_d + 64];
 
     __syncthreads();

@@ -142,7 +142,6 @@ __global__ void computeK2_F6(float * x, float * f){
   __syncthreads();
 
   if( id_d < ndim ){
-
     //apply rotation
     z_rot[id_d] = 0.0;
     for( i = 0; i < ndim; i++ ){
@@ -155,63 +154,78 @@ __global__ void computeK2_F6(float * x, float * f){
 
     s[id_d] = (z[id_d]*z[id_d]);
     p[id_d] = __cosf( z[id_d] / __fsqrt_rn(1.0+id_d) );
-
-    __syncthreads();
-
-    /* Simple reduce sum */
-    if( id_d < 64 ){
-      s[id_d] += s[id_d + 64];
-      p[id_d] *= p[id_d + 64];
-    }
-
-    __syncthreads();
-
-    if( id_d < 32 ){
-      s[id_d] += s[id_d + 32];
-      p[id_d] *= p[id_d + 32];
-    }
-
-    __syncthreads();
-
-    if( id_d < 16 ){
-      s[id_d] += s[id_d + 16];
-      p[id_d] *= p[id_d + 16];
-    }
-
-    __syncthreads();
-
-    if( id_d < 8 ){
-      s[id_d] += s[id_d + 8];
-      p[id_d] *= p[id_d + 8];
-    }
-
-    __syncthreads();
-
-    if( id_d < 4 ){
-      s[id_d] += s[id_d + 4];
-      p[id_d] *= p[id_d + 4];
-    }
-
-    __syncthreads();
-
-    if( id_d < 2 ){
-      s[id_d] += s[id_d + 2];
-      p[id_d] *= p[id_d + 2];
-    }
-
-    __syncthreads();
-
-    if( id_d == 0 ){
-      s[id_d] += s[id_d + 1];
-      p[id_d] *= p[id_d + 1];
-    }
-
-    __syncthreads();
-
-    if( id_d == 0 ){
-      f[id_p] = 1.0 + s[id_d] / 4000.0 - p[id_d];
-    }
   }
+
+  __syncthreads();
+
+  /*
+  if( id_d == 0 ){
+    float sum = 0.0, prod = 1.0;
+    #pragma unroll
+    for( i = 0; i < ndim; i++ ){
+      prod *= p[i];
+      sum  += s[i];
+    }
+    f[id_p] = 1.0 + sum/4000.0 - prod;
+  }*/
+
+  __syncthreads();
+
+  /* Simple reduce sum */
+  if( id_d < 64 && ndim == 100 ){
+    s[id_d] += s[id_d + 64];
+    p[id_d] *= p[id_d + 64];
+  }
+
+  __syncthreads();
+
+  if( id_d < 32 ){
+    s[id_d] += s[id_d + 32];
+    p[id_d] *= p[id_d + 32];
+  }
+
+  __syncthreads();
+
+  if( id_d < 16 ){
+    s[id_d] += s[id_d + 16];
+    p[id_d] *= p[id_d + 16];
+  }
+
+  __syncthreads();
+
+  if( id_d < 8 ){
+    s[id_d] += s[id_d + 8];
+    p[id_d] *= p[id_d + 8];
+  }
+
+  __syncthreads();
+
+  if( id_d < 4 ){
+    s[id_d] += s[id_d + 4];
+    p[id_d] *= p[id_d + 4];
+  }
+
+  __syncthreads();
+
+  if( id_d < 2 ){
+    s[id_d] += s[id_d + 2];
+    p[id_d] *= p[id_d + 2];
+  }
+
+  __syncthreads();
+
+  if( id_d == 0 ){
+    s[id_d] += s[id_d + 1];
+    p[id_d] *= p[id_d + 1];
+  }
+
+  __syncthreads();
+
+  if( id_d == 0 ){
+    f[id_p] = 1.0 + s[0]/4000.0 - p[0];
+  }
+
+
 }
 
 void F6::compute(float * x, float * f){
