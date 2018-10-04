@@ -15,4 +15,6 @@ public:
 
 __global__ void computeK_F6(float * x, float * f);
 
+__global__ void computeK2_F6(float * x, float * f);
+
 #endif

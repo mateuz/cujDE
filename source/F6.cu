@@ -22,8 +22,8 @@ F6::F6(uint _dim, uint _ps):Benchmarks()
 {
   n_dim = _dim;
   ps = _ps;
-  min = -600.0;
-  max = +600.0;
+  min = -100.0;
+  max = +100.0;
   ID = 6;
 
   n_threads = 32;
@@ -32,7 +32,7 @@ F6::F6(uint _dim, uint _ps):Benchmarks()
   /* ---------------------------------------------- */
   /* Load a shift vector to test the bench function */
   std::string file_name = "data-files/shift_griewank.mat";
-  std::string vec_name = "Shift - Griewank [-600.0, +600.0]";
+  std::string vec_name = "Shift - Griewank";
   IO * io = new IO();
   std::ifstream file(file_name);
   if( not file.is_open() ){
@@ -112,7 +112,110 @@ __global__ void computeK_F6(float * x, float * f){
   }
 }
 
+__global__ void computeK2_F6(float * x, float * f){
+  uint id_p, id_d, ndim, i, stride;
+
+  id_p = blockIdx.x;
+  id_d = threadIdx.x;
+  //ps = params.ps;
+  ndim = params.n_dim;
+  stride = id_p * ndim;
+
+  __shared__ float s[128];
+  __shared__ float p[128];
+  __shared__ float z[100];
+  __shared__ float R[10000];
+  __shared__ float z_rot[100];
+
+  s[id_d] = 0.0f;
+  p[id_d] = 1.0f;
+
+  //load the z and R
+  if( id_d < ndim ){
+    z[id_d] = (x[stride+id_d] - shift[id_d]) * 6.0;
+    //each dimension load your rotation column from rotation matrix
+    for( i = 0; i < ndim; i++ ){
+      R[(id_d*ndim)+i] = m_rotation[(id_d*ndim)+i];
+    }
+  }
+
+  __syncthreads();
+
+  if( id_d < ndim ){
+
+    //apply rotation
+    z_rot[id_d] = 0.0;
+    for( i = 0; i < ndim; i++ ){
+      z_rot[id_d] += z[i] * R[(id_d*ndim)+i];
+    }
+
+    __syncthreads();
+
+    z[id_d] = z_rot[id_d] * __powf(100.0, 1.0*id_d/(ndim-1)/2.0);
+
+    s[id_d] = (z[id_d]*z[id_d]);
+    p[id_d] = __cosf( z[id_d] / __fsqrt_rn(1.0+id_d) );
+
+    __syncthreads();
+
+    /* Simple reduce sum */
+    if( id_d < 64 ){
+      s[id_d] += s[id_d + 64];
+      p[id_d] *= p[id_d + 64];
+    }
+
+    __syncthreads();
+
+    if( id_d < 32 ){
+      s[id_d] += s[id_d + 32];
+      p[id_d] *= p[id_d + 32];
+    }
+
+    __syncthreads();
+
+    if( id_d < 16 ){
+      s[id_d] += s[id_d + 16];
+      p[id_d] *= p[id_d + 16];
+    }
+
+    __syncthreads();
+
+    if( id_d < 8 ){
+      s[id_d] += s[id_d + 8];
+      p[id_d] *= p[id_d + 8];
+    }
+
+    __syncthreads();
+
+    if( id_d < 4 ){
+      s[id_d] += s[id_d + 4];
+      p[id_d] *= p[id_d + 4];
+    }
+
+    __syncthreads();
+
+    if( id_d < 2 ){
+      s[id_d] += s[id_d + 2];
+      p[id_d] *= p[id_d + 2];
+    }
+
+    __syncthreads();
+
+    if( id_d == 0 ){
+      s[id_d] += s[id_d + 1];
+      p[id_d] *= p[id_d + 1];
+    }
+
+    __syncthreads();
+
+    if( id_d == 0 ){
+      f[id_p] = 1.0 + s[id_d] / 4000.0 - p[id_d];
+    }
+  }
+}
+
 void F6::compute(float * x, float * f){
-  computeK_F6<<< n_blocks, n_threads >>>(x, f);
+  //computeK_F6<<< n_blocks, n_threads >>>(x, f);
+  computeK2_F6<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }
