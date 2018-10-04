@@ -19,7 +19,7 @@ F1::F1(uint _dim, uint _ps):Benchmarks()
   n_blocks = (ps%n_threads)? (ps/n_threads)+1 : (ps/n_threads);
 
   std::string file_name = "data-files/shift_sphere.mat";
-  std::string vec_name = "Shift - Sphere [-100.0, +100.0]";
+  std::string vec_name = "Shift - Sphere";
   IO * io = new IO();
   std::ifstream file(file_name);
   if(not file.is_open()){
@@ -37,7 +37,7 @@ F1::~F1()
   /* empty */
 }
 
-__global__ void computeK(float * x, float * f){
+__global__ void computeK_F1(float * x, float * f){
   uint id_p = threadIdx.x + (blockIdx.x * blockDim.x);
   uint ps = params.ps;
   if( id_p < ps ){
@@ -56,20 +56,20 @@ __global__ void computeK(float * x, float * f){
   }
 }
 
-__global__ void computeK_F1(float * x, float * f){
+__global__ void computeK2_F1(float * x, float * f){
   //uint id_g = threadIdx.x + (blockIdx.x * blockDim.x);
   uint id_p = blockIdx.x;
   uint id_d = threadIdx.x;
-
-  //uint ps = params.ps;
   uint ndim = params.n_dim;
+  uint stride = id_p * ndim;
 
   __shared__ float z[128];
 
   z[id_d] = 0.0;
 
+  float t;
   if( id_d < ndim ){
-    float t = x[(id_p * ndim) + id_d] - shift[id_d];
+    t = x[stride + id_d] - shift[id_d];
     z[id_d] = (t * t);
   }
 
@@ -116,7 +116,7 @@ __global__ void computeK_F1(float * x, float * f){
 }
 
 void F1::compute(float * x, float * f){
-  computeK<<< n_blocks, n_threads >>>(x, f);
-  //computeK_F1<<< ps, 128 >>>(x, f);
+  //computeK_F1<<< n_blocks, n_threads >>>(x, f);
+  computeK_F1<<< ps, 128 >>>(x, f);
   checkCudaErrors(cudaGetLastError());
 }

@@ -13,7 +13,9 @@ public:
   void compute(float * x, float * fitness);
 };
 
-__global__ void computeK(float * x, float * f);
 
 __global__ void computeK_F1(float * x, float * f);
+
+__global__ void computeK2_F1(float * x, float * f);
+
 #endif
