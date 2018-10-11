@@ -1,4 +1,4 @@
-# A Self-Adaptive Differential Evolution (jDE) on GPU using CUDA
+# A GPU-Based jDE Algorithm
 
 ###### A CUDA-Based implementation of a self-adaptive differential evolution namely jDE [1, 2]. Differential Evolution is one of the most used algorithm for optimization in the continuous domain, but is highly sensitive to parameters. The self-adaptive aims to remove the responsability of the designer to define the parameters values, given more robustness to the algorithm. The jDE algorithm uses a self-adapting mechanism on the control parameters F (mutation scale factor) and CR (crossover probability), changing his values during the run. This implementation uses DE/rand/1/bin strategy to create mutant vectors.
 
@@ -56,15 +56,7 @@ $ make clean
 
 ##### TODO
 
-- :heavy_check_mark: Test efficiency of the selection kernel.
-
-- :heavy_check_mark: Auto adjust the number of blocks and threads.
-    
-- :heavy_check_mark: Dimension parallelization of the DE operation (:star2: Kernel called mDE)
-
-- :heavy_check_mark: Add Shift and Rotated Rastrigin function as defined in CEC'13 Real-Parameter Optimization Competetition
-
-- :heavy_check_mark: Complex functions evaluation in parallel by dimension (F6 and F7)
+- Empty list for a while
 
 ***
 
