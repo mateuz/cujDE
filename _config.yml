@@ -1,1 +1,4 @@
 theme: jekyll-theme-cayman
+title: [cujDE]
+description: [A GPU-Based implementation of a self-adaptive Differential Evolution employing the jDE mechanism]
+show_downloads: ["true"]
