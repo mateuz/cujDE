@@ -31,14 +31,7 @@ $ "help, h"      - Show this help
 
 ##### Functions Available
 
-<table style="undefined;table-layout: fixed; width: 550px">
-<colgroup>
-<col style="width: 76px">
-<col style="width: 156px">
-<col style="width: 80px">
-<col style="width: 73px">
-<col style="width: 165px">
-</colgroup>
+<table style="">
   <tr>
     <th>Function</th>
     <th>Name</th>
@@ -96,6 +89,7 @@ $ "help, h"      - Show this help
     <td>[-5, +5]</td>
   </tr>
 </table>
+
 ##### Execute
 
 ```sh
