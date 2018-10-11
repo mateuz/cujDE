@@ -5,11 +5,11 @@
 ***
 ##### Requirements
 
-- [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (tested with 9.2)
+- ##### [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) (tested with 9.2)
 
-- GPU Compute Capability (tested with versions 5.2 and 6.1)
+- ##### GPU Compute Capability (tested with versions 5.2 and 6.1)
 
-- [Boost C++ Libraries - Program Options](https://www.boost.org/) (tested with 1.58.0)
+- ##### [Boost C++ Libraries - Program Options](https://www.boost.org/) (tested with 1.58.0)
 
 ##### Compile
 
@@ -29,19 +29,73 @@ $ "max_eval, e"  - Number of Function Evaluations
 $ "help, h"      - Show this help
 ```
 
-##### Functions available
+##### Functions Available
 
-| Number | Function          | Shifted | Rotated  | Search Space |
-| :---:  | :---              | :---:   | :---:    | :---:        |
-| 01     | S. Sphere         | Yes     | No       | [-100, +100] |
-| 02     | S. Rosenbrock     | Yes     | No       | [-100, +100] |
-| 03     | S. Griewank       | Yes     | No       | [-600, +600] |
-| 04     | S. Rastrigin      | Yes     | No       | [-5, +5]     |
-| 05     | S. R. Rosenbrock  | Yes     | Yes      | [-100, +100] |
-| 06     | S. R. Griewank    | Yes     | Yes      | [-600, +600] |
-| 07     | S. R. Rastrigin   | Yes     | Yes      | [-5, +5]     |
-
-
+<table style="undefined;table-layout: fixed; width: 550px">
+<colgroup>
+<col style="width: 76px">
+<col style="width: 156px">
+<col style="width: 80px">
+<col style="width: 73px">
+<col style="width: 165px">
+</colgroup>
+  <tr>
+    <th>Function</th>
+    <th>Name</th>
+    <th>Shifted</th>
+    <th>Rotated</th>
+    <th>Search Space</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>S. Sphere</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>[-100, +100]</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>S. Rosenbrock</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>[-100, +100]</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>S. Griewank</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>[-600, +600]</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>S. Rastrigin</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>[-5, +5]</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>S. R. Rosenbrock</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>[-100, +100]</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>S. R. Griewank</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>[-600, +600]</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>S. R. Rastrigin</td>
+    <td>Yes</td>
+    <td>Yes</td>
+    <td>[-5, +5]</td>
+  </tr>
+</table>
 ##### Execute
 
 ```sh
