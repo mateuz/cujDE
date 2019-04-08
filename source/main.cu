@@ -34,6 +34,7 @@ namespace po = boost::program_options;
 #include "F7.cuh"
 #include "jDE.cuh"
 
+#include "2D_AB.cuh"
 struct prg
 {
   float a, b;
@@ -83,6 +84,8 @@ std::string toString(uint id){
       return "Rotated Griewank";
     case 7:
       return "Rotated Rastrigin";
+    case 1001:
+      return "2D-AB";
     default:
       return "Unknown";
   }
@@ -123,6 +126,11 @@ Benchmarks * getFunction(uint id, uint n_dim, uint ps){
 
   if( id == 7 ){
     n = new F7(n_dim, ps);
+    return n;
+  }
+
+  if( id == 1001 ){
+    n = new F2DAB(n_dim, ps);
     return n;
   }
 
@@ -184,7 +192,7 @@ int main(int argc, char * argv[]){
 
 	thrust::device_vector<float>::iterator it;
 
-	Benchmarks * B = NULL;
+  Benchmarks * B = NULL;
   B = getFunction(f_id, n_dim, NP);
 
   if( B == NULL ){
